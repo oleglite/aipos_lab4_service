@@ -31,7 +31,7 @@ import org.xml.sax.SAXException;
 
 /**
  *
- * @author Lite4
+ * @author Oleg Beloglazov
  */
 public class AxisService {
     
