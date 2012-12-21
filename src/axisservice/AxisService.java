@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
@@ -38,30 +39,48 @@ public class AxisService {
     static final String FILENAME = "D:\\Temp\\articles\\articles.xml";
     static final String ARTICLE_TAG = "article";
     static final String ARTICLE_NAME_ATRIBUTE = "name";
+    static final String ARTICLE_ID_ATRIBUTE = "id";
     File mArticlesDir;
     Element mRootElement;
     Document mDoc;
     
     
-    public String[] getArticles() {
+    /**
+     *
+     * @return
+     */
+    public String[] getArticlesId() {
         log("getArticles()");
         prepareDoc();
         
         List<Element> articleElements = getChildElements(mRootElement, ARTICLE_TAG);
         String[] articles = new String[articleElements.size()];
         for(int i = 0; i < articleElements.size(); i++) {
-            articles[i] = articleElements.get(i).getAttribute(ARTICLE_NAME_ATRIBUTE);
+            articles[i] = articleElements.get(i).getAttribute(ARTICLE_ID_ATRIBUTE);
         }
         
         return articles;
     }
     
-    public String getArticleContent(String articleName) {   
-        log("getArticleContent(" + articleName + ")");
+    public String getArticleName(String articleId) {
+        log("getArticleName(" + articleId + ")");
         
         List<Element> articleElements = getChildElements(mRootElement, ARTICLE_TAG);
         for(Element element : articleElements) {
-            if(element.getAttribute(ARTICLE_NAME_ATRIBUTE).equals(articleName)) {
+            if(element.getAttribute(ARTICLE_ID_ATRIBUTE).equals(articleId)) {
+                return element.getAttribute(ARTICLE_NAME_ATRIBUTE);
+            }
+        }
+        
+        return null;
+    }
+    
+    public String getArticleContent(String articleId) {   
+        log("getArticleContent(" + articleId + ")");
+        
+        List<Element> articleElements = getChildElements(mRootElement, ARTICLE_TAG);
+        for(Element element : articleElements) {
+            if(element.getAttribute(ARTICLE_ID_ATRIBUTE).equals(articleId)) {
                 CDATASection cdata = getElementCDATA(element);
                 return cdata.getWholeText().trim();
             }
@@ -74,6 +93,7 @@ public class AxisService {
         log("addArticle(" + articleName + ")");
         
         Element newArticle = mDoc.createElement(ARTICLE_TAG);
+        newArticle.setAttribute(ARTICLE_ID_ATRIBUTE, getFreeId());
         newArticle.setAttribute(ARTICLE_NAME_ATRIBUTE, articleName);
         mRootElement.appendChild(newArticle);
         
@@ -81,10 +101,10 @@ public class AxisService {
         return null;
     }
     
-    public String removeArticle(String articleName) {
-        log("removeArticle(" + articleName + ")");
+    public String removeArticle(String articleId) {
+        log("removeArticle(" + articleId + ")");
         
-        Element article = getArticleElement(articleName);
+        Element article = getArticleElement(articleId);
         if(article != null) {
             mRootElement.removeChild(article);
             saveFile();
@@ -93,10 +113,10 @@ public class AxisService {
         return null;
     }
     
-    public String setArticleContent(String articleName, String articleContent) {
-        log("setArticleContent(" + articleName + ")");
+    public String setArticleContent(String articleId, String articleContent) {
+        log("setArticleContent(" + articleId + ")");
         
-        Element article = getArticleElement(articleName);
+        Element article = getArticleElement(articleId);
         CDATASection elementCDATA = getElementCDATA(article);
         elementCDATA.setData(articleContent.trim());
         saveFile();
@@ -119,9 +139,9 @@ public class AxisService {
         return childElements;        
     }
     
-    private Element getArticleElement(String attrNameValue) {
+    private Element getArticleElement(String attrIdValue) {
         for(Element element : getChildElements(mRootElement, ARTICLE_TAG)) {
-            if(element.getAttribute(ARTICLE_NAME_ATRIBUTE).equals(attrNameValue)) {
+            if(element.getAttribute(ARTICLE_ID_ATRIBUTE).equals(attrIdValue)) {
                 return element;
             }
         }
@@ -168,7 +188,19 @@ public class AxisService {
         }
     }
     
+    private String getFreeId() {
+        int maxId = 0;
+        List<Element> articleElements = getChildElements(mRootElement, ARTICLE_TAG);
+        for(Element element : articleElements) {
+            Integer elementId = Integer.valueOf(element.getAttribute(ARTICLE_ID_ATRIBUTE));
+            if(elementId.intValue() > maxId) {
+                maxId = elementId.intValue();
+            }
+        }
+        return String.valueOf(maxId + 1);
+    }
+    
     private void log(String text) {
-        System.out.println(text);
+        //System.out.println(text);
     }
 }
